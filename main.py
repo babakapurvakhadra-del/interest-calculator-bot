@@ -48,7 +48,7 @@ def run_bot():
     print("Bot running...")
     app.run_polling()
 
-# -------- FLASK SERVER (FOR RENDER) -------- #
+# -------- FLASK SERVER -------- #
 
 web_app = Flask(__name__)
 
@@ -63,7 +63,9 @@ def run_web():
 # -------- MAIN -------- #
 
 if __name__ == "__main__":
-    t1 = threading.Thread(target=run_bot)
-    t1.start()
+    # Run Flask in background thread
+    t = threading.Thread(target=run_web)
+    t.start()
 
-    run_web()
+    # Run Telegram bot in MAIN thread ✅
+    run_bot()
