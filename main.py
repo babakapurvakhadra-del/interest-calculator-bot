@@ -21,24 +21,39 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def calc(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         principal = float(context.args[0])
-        rate = float(context.args[1]) / 100
-        start_date = datetime.strptime(context.args[2], "%d-%m-%Y")
-        end_date = datetime.strptime(context.args[3], "%d-%m-%Y")
+        rate_percent = float(context.args[1])
+        rate = rate_percent / 100
 
-        days = (end_date - start_date).days
-        interest = principal * rate * (days / 30)
+        start = datetime.strptime(context.args[2], "%d-%m-%Y")
+        end = datetime.strptime(context.args[3], "%d-%m-%Y")
+
+        # -------- YOUR 30-DAY MONTH LOGIC -------- #
+        months = (end.year - start.year) * 12 + (end.month - start.month)
+
+        if end.day >= start.day:
+            extra_days = end.day - start.day
+        else:
+            months -= 1
+            extra_days = 30 - (start.day - end.day)
+
+        total_days = months * 30 + extra_days
+
+        # -------- INTEREST -------- #
+        interest = principal * rate * (total_days / 30)
 
         await update.message.reply_text(
             f"📊 Result:\n\n"
             f"Principal: ₹{principal:,.0f}\n"
-            f"Rate: {rate*100}% per month\n"
-            f"Days: {days}\n"
-            f"Interest: ₹{interest:,.0f}"
+            f"Rate: {rate_percent}% per month\n"
+            f"Days: {total_days}\n"
+            f"Interest: ₹{round(interest):,}"
         )
 
     except:
         await update.message.reply_text(
-            "❌ Error!\nUse:\n/calc 1000000 0.9 16-08-2026 07-09-2026"
+            "❌ Error!\n\n"
+            "Correct format:\n"
+            "/calc 1000000 0.9 16-08-2026 07-09-2026"
         )
 
 def run_bot():
@@ -48,7 +63,7 @@ def run_bot():
     print("Bot running...")
     app.run_polling()
 
-# -------- FLASK SERVER -------- #
+# -------- FLASK SERVER (FOR RENDER FREE) -------- #
 
 web_app = Flask(__name__)
 
@@ -63,9 +78,9 @@ def run_web():
 # -------- MAIN -------- #
 
 if __name__ == "__main__":
-    # Run Flask in background thread
+    # Run Flask in background
     t = threading.Thread(target=run_web)
     t.start()
 
-    # Run Telegram bot in MAIN thread ✅
+    # Run bot in main thread
     run_bot()
